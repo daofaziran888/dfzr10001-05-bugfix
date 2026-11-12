@@ -19,14 +19,18 @@ STATUSES = ["成功", "部分失败", "完全失败"]
 @router.get("", response_model=PageResult[dict])
 def list_entries(
     keyword: str | None = Query(default=None, description="按日志编号检索"),
+    log_no: str | None = Query(default=None, alias="日志编号", description="按日志编号检索（页面筛选条件）"),
+    task: str | None = Query(default=None, alias="关联任务", description="按关联任务检索"),
     status: str | None = Query(default=None, description="成功、部分失败、完全失败"),
     page: int = 1,
     size: int = 20,
 ) -> PageResult[dict]:
-    """按日志编号与状态过滤采集日志列表；没有数据时返回空页，不报错。"""
+    """按日志编号、关联任务与状态过滤采集日志列表；没有数据时返回空页，不报错。"""
     if size > 200:
         raise HTTPException(status_code=400, detail="每页最多 200 条，请缩小分页范围")
-    items, total = service.list_entries(keyword=keyword, status=status, page=page, size=size)
+    items, total = service.list_entries(
+        keyword=keyword or log_no, task=task, status=status, page=page, size=size
+    )
     return PageResult(items=items, total=total, page=page, size=size)
 
 

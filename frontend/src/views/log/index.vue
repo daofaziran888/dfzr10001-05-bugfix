@@ -70,7 +70,7 @@ import { request } from '@/api/client'
 type Row = Record<string, string | number | null>
 
 const ENDPOINT = '/api/log'
-const columns = ["日志编号", "关联任务", "开始时间", "结束时间", "采集行数", "成功条数", "失败条数", "错误信息"]
+const columns = ["日志编号", "关联任务", "开始时间", "结束时间", "采集行数", "成功条数", "失败条数", "错误信息", "重试来源"]
 const actions = ["标记已读", "触发重试", "归档日志"]
 const statuses = ["成功", "部分失败", "完全失败"]
 const stats = [{"label": "执行日志总数", "value": 0}, {"label": "成功日志", "value": 0}, {"label": "失败日志", "value": 0}]
@@ -99,10 +99,11 @@ async function runAction(action: string, row: Row) {
   try {
     const response = await request(`${ENDPOINT}/${row.id}/actions`, {
       method: 'POST',
-      body: JSON.stringify({ action }),
+      body: JSON.stringify({ values: { action } }),
     })
-    if (!response.ok) {
-      throw new Error('采集日志动作未生效，请稍后重试')
+    const payload = await response.json()
+    if (!response.ok || !payload.ok) {
+      throw new Error(payload.message ?? payload.detail ?? '采集日志动作未生效，请稍后重试')
     }
     await reload()
   } catch (error) {
